@@ -13,7 +13,16 @@ fn dummy_parser(input: &str) -> String {
         result.push(c);
         result = replace_worded_numbers(result);
     }
-    result
+
+    let mut reversed = String::new();
+    let reversed_input: String = input.chars().rev().collect();
+
+    for c in reversed_input.chars() {
+        reversed.insert(0, c);
+        reversed = replace_worded_numbers(reversed);
+    }
+
+    format!("{}{}", result, reversed)
 }
 
 fn replace_worded_numbers(input: String) -> String {
@@ -45,7 +54,6 @@ fn calibration(input: String) -> Result<i32> {
         match line {
             Ok(line_content) => {
                 let update_content = dummy_parser(&line_content);
-                println!("line_content {} updated {}", line_content, update_content);
                 if let (Some(first), Some(last)) = (
                     update_content.chars().find(|c| c.is_ascii_digit()),
                     update_content.chars().rev().find(|c| c.is_ascii_digit()),
@@ -53,7 +61,6 @@ fn calibration(input: String) -> Result<i32> {
                     let concatenated_str = format!("{}{}", first, last);
 
                     if let Ok(result) = concatenated_str.parse::<i32>() {
-                        println!("Parsed Result: {}", result);
                         sum += result;
                     } else {
                         println!("Error parsing to numeric value");
@@ -95,6 +102,14 @@ mod tests {
         let result = calibration("src/resources/test-input-2.txt".to_owned())
             .map_err(|e| format!("Test failed with error: {:?}", e))?;
         assert_eq!(result, 281);
+        Ok(())
+    }
+
+    #[test]
+    fn should_calibrate_input_worded_2() -> Result<(), String> {
+        let result = calibration("src/resources/test-input-3.txt".to_owned())
+            .map_err(|e| format!("Test failed with error: {:?}", e))?;
+        assert_eq!(result, 78);
         Ok(())
     }
 }
