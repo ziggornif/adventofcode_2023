@@ -13,6 +13,12 @@ struct Count {
     count: i32,
 }
 
+impl Count {
+    fn default(color: String) -> Self {
+        Count { color, count: 1 }
+    }
+}
+
 fn extract_game_number(input: &str) -> i32 {
     let re = Regex::new(r"Game (\d+):").unwrap();
     if let Some(captures) = re.captures(&input) {
@@ -44,7 +50,6 @@ fn sum_of_games(input: String, red: i32, green: i32, blue: i32) -> Result<i32> {
     for line in reader.lines() {
         match line {
             Ok(line_content) => {
-                // here the magic
                 let game_number = extract_game_number(&line_content);
                 let counts = extract_counts(&line_content);
 
@@ -61,9 +66,7 @@ fn sum_of_games(input: String, red: i32, green: i32, blue: i32) -> Result<i32> {
                     .filter(|item| item.color == "blue")
                     .find(|item| item.count > blue);
 
-                if red_arr.is_some() || green_arr.is_some() || blue_arr.is_some() {
-                    println!("Invalid game");
-                } else {
+                if !(red_arr.is_some() || green_arr.is_some() || blue_arr.is_some()) {
                     sum += game_number;
                 }
             }
@@ -73,10 +76,53 @@ fn sum_of_games(input: String, red: i32, green: i32, blue: i32) -> Result<i32> {
     Ok(sum)
 }
 
+fn power_of_cubes(input: String) -> Result<i32> {
+    let reader = read_input_file(input)?;
+
+    let mut sum = 0;
+
+    for line in reader.lines() {
+        match line {
+            Ok(line_content) => {
+                let counts = extract_counts(&line_content);
+
+                let default_red = Count::default("red".to_owned());
+                let default_green = Count::default("green".to_owned());
+                let default_blue = Count::default("blue".to_owned());
+
+                let max_red = counts
+                    .iter()
+                    .filter(|item| item.color == "red")
+                    .max_by_key(|item| item.count)
+                    .unwrap_or(&default_red);
+                let max_green = counts
+                    .iter()
+                    .filter(|item| item.color == "green")
+                    .max_by_key(|item| item.count)
+                    .unwrap_or(&default_green);
+                let max_blue = counts
+                    .iter()
+                    .filter(|item| item.color == "blue")
+                    .max_by_key(|item| item.count)
+                    .unwrap_or(&default_blue);
+
+                let result = max_red.count * max_green.count * max_blue.count;
+
+                sum += result;
+            }
+            Err(e) => eprintln!("Error reading line: {}", e),
+        }
+    }
+    Ok(sum)
+}
+
 fn main() -> Result<()> {
-    println!("Hello advent of code day 1 !");
+    println!("Hello advent of code day 2 !");
 
     let sum = sum_of_games("day2/src/resources/input.txt".to_owned(), 12, 13, 14)?;
+    println!("{sum}");
+
+    let sum = power_of_cubes("day2/src/resources/input.txt".to_owned())?;
     println!("{sum}");
 
     Ok(())
@@ -84,13 +130,21 @@ fn main() -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use crate::sum_of_games;
+    use crate::{power_of_cubes, sum_of_games};
 
     #[test]
     fn should_get_games_sum() -> Result<(), String> {
         let result = sum_of_games("src/resources/test-input.txt".to_owned(), 12, 13, 14)
             .map_err(|e| format!("Test failed with error: {:?}", e))?;
         assert_eq!(result, 8);
+        Ok(())
+    }
+
+    #[test]
+    fn shoud_get_power_of_cubes() -> Result<(), String> {
+        let result = power_of_cubes("src/resources/test-input.txt".to_owned())
+            .map_err(|e| format!("Test failed with error: {:?}", e))?;
+        assert_eq!(result, 2286);
         Ok(())
     }
 }
