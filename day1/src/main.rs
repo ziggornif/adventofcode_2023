@@ -1,11 +1,6 @@
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Result};
-
-fn read_input_file(input: String) -> Result<BufReader<File>> {
-    let file = File::open(input)?;
-    Ok(BufReader::new(file))
-}
+use std::io::{BufRead, Error};
+use utils::read_input_file;
 
 fn dummy_parser(input: &str) -> String {
     let mut result = String::new();
@@ -45,9 +40,8 @@ fn replace_worded_numbers(input: String) -> String {
     result
 }
 
-fn calibration(input: String) -> Result<i32> {
+fn calibration(input: String) -> Result<i32, Error> {
     let reader = read_input_file(input)?;
-
     let mut sum = 0;
 
     for line in reader.lines() {
@@ -76,7 +70,7 @@ fn calibration(input: String) -> Result<i32> {
     Ok(sum)
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Error> {
     println!("Hello advent of code day 1 !");
 
     let sum = calibration("day1/src/resources/input.txt".to_owned())?;

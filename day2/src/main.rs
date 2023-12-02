@@ -1,12 +1,6 @@
-use std::fs::File;
-use std::io::{BufRead, BufReader, Result};
-
 use regex::Regex;
-
-fn read_input_file(input: String) -> Result<BufReader<File>> {
-    let file = File::open(input)?;
-    Ok(BufReader::new(file))
-}
+use std::io::{BufRead, Error};
+use utils::read_input_file;
 
 struct Count {
     color: String,
@@ -42,7 +36,7 @@ fn extract_counts(input: &str) -> Vec<Count> {
     counts
 }
 
-fn sum_of_games(input: String, red: i32, green: i32, blue: i32) -> Result<i32> {
+fn sum_of_games(input: String, red: i32, green: i32, blue: i32) -> Result<i32, Error> {
     let reader = read_input_file(input)?;
 
     let mut sum = 0;
@@ -76,7 +70,7 @@ fn sum_of_games(input: String, red: i32, green: i32, blue: i32) -> Result<i32> {
     Ok(sum)
 }
 
-fn power_of_cubes(input: String) -> Result<i32> {
+fn power_of_cubes(input: String) -> Result<i32, Error> {
     let reader = read_input_file(input)?;
 
     let mut sum = 0;
@@ -116,7 +110,7 @@ fn power_of_cubes(input: String) -> Result<i32> {
     Ok(sum)
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Error> {
     println!("Hello advent of code day 2 !");
 
     let sum = sum_of_games("day2/src/resources/input.txt".to_owned(), 12, 13, 14)?;
