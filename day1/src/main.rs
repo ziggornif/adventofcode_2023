@@ -34,7 +34,7 @@ fn replace_worded_numbers(input: String) -> String {
     ]);
     let mut result = input.clone();
     for (key, val) in numbers {
-        result = result.replace(key, &*val.to_string());
+        result = result.replace(key, &val.to_string());
     }
 
     result

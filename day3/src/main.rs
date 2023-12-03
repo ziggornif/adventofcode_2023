@@ -34,7 +34,7 @@ fn extract_numbers_adjacent_to_symbols(input: String) -> Result<i32, Error> {
 
         for (col_idx, ch) in line.chars().enumerate() {
             if ch != '.' && !ch.is_numeric() {
-                if value.len() > 0 {
+                if !value.is_empty() {
                     numbers.push(Number {
                         start: Coord {
                             x: row_idx as i32,
@@ -56,7 +56,7 @@ fn extract_numbers_adjacent_to_symbols(input: String) -> Result<i32, Error> {
                     },
                 })
             } else if ch.is_numeric() {
-                if value.len() == 0 {
+                if value.is_empty() {
                     start_coord = col_idx as i32;
                 } else if col_idx == line_size - 1 {
                     value.push(ch);
@@ -74,21 +74,19 @@ fn extract_numbers_adjacent_to_symbols(input: String) -> Result<i32, Error> {
                     value.clear();
                 }
                 value.push(ch);
-            } else {
-                if value.len() > 0 {
-                    numbers.push(Number {
-                        start: Coord {
-                            x: row_idx as i32,
-                            y: start_coord,
-                        },
-                        end: Coord {
-                            x: row_idx as i32,
-                            y: (col_idx - 1) as i32,
-                        },
-                        value: value.parse::<i32>().unwrap(),
-                    });
-                    value.clear();
-                }
+            } else if !value.is_empty() {
+                numbers.push(Number {
+                    start: Coord {
+                        x: row_idx as i32,
+                        y: start_coord,
+                    },
+                    end: Coord {
+                        x: row_idx as i32,
+                        y: (col_idx - 1) as i32,
+                    },
+                    value: value.parse::<i32>().unwrap(),
+                });
+                value.clear();
             }
         }
     }
@@ -99,19 +97,15 @@ fn extract_numbers_adjacent_to_symbols(input: String) -> Result<i32, Error> {
             let s_x = symb.coord.x;
             let s_y = symb.coord.y;
 
-            let matching = if number.start.x != s_x
+            
+            if number.start.x != s_x
                 && number.start.x != s_x + 1
                 && number.start.x != s_x - 1
             {
                 false
             } else {
-                if number.start.y - 1 <= s_y && s_y <= number.end.y + 1 {
-                    true
-                } else {
-                    false
-                }
-            };
-            matching
+                number.start.y - 1 <= s_y && s_y <= number.end.y + 1
+            }
         });
 
         if found.is_some() {
@@ -137,7 +131,7 @@ fn gear_ratios(input: String) -> Result<i32, Error> {
 
         for (col_idx, ch) in line.chars().enumerate() {
             if ch == '*' {
-                if value.len() > 0 {
+                if !value.is_empty() {
                     numbers.push(Number {
                         start: Coord {
                             x: row_idx as i32,
@@ -159,7 +153,7 @@ fn gear_ratios(input: String) -> Result<i32, Error> {
                     },
                 })
             } else if ch.is_numeric() {
-                if value.len() == 0 {
+                if value.is_empty() {
                     start_coord = col_idx as i32;
                 } else if col_idx == line_size - 1 {
                     value.push(ch);
@@ -177,21 +171,19 @@ fn gear_ratios(input: String) -> Result<i32, Error> {
                     value.clear();
                 }
                 value.push(ch);
-            } else {
-                if value.len() > 0 {
-                    numbers.push(Number {
-                        start: Coord {
-                            x: row_idx as i32,
-                            y: start_coord,
-                        },
-                        end: Coord {
-                            x: row_idx as i32,
-                            y: (col_idx - 1) as i32,
-                        },
-                        value: value.parse::<i32>().unwrap(),
-                    });
-                    value.clear();
-                }
+            } else if !value.is_empty() {
+                numbers.push(Number {
+                    start: Coord {
+                        x: row_idx as i32,
+                        y: start_coord,
+                    },
+                    end: Coord {
+                        x: row_idx as i32,
+                        y: (col_idx - 1) as i32,
+                    },
+                    value: value.parse::<i32>().unwrap(),
+                });
+                value.clear();
             }
         }
     }
@@ -206,11 +198,7 @@ fn gear_ratios(input: String) -> Result<i32, Error> {
 
                 if num.start.x != s_x && num.start.x != s_x + 1 && num.start.x != s_x - 1 {
                     false
-                } else if num.start.y - 1 <= s_y && s_y <= num.end.y + 1 {
-                    true
-                } else {
-                    false
-                }
+                } else { num.start.y - 1 <= s_y && s_y <= num.end.y + 1 }
             })
             .collect();
 

@@ -15,7 +15,7 @@ impl Count {
 
 fn extract_game_number(input: &str) -> i32 {
     let re = Regex::new(r"Game (\d+):").unwrap();
-    if let Some(captures) = re.captures(&input) {
+    if let Some(captures) = re.captures(input) {
         if let Some(game_number) = captures.get(1) {
             return game_number.as_str().parse().unwrap();
         }
@@ -27,7 +27,7 @@ fn extract_counts(input: &str) -> Vec<Count> {
     let mut counts = Vec::new();
     let re = Regex::new(r"(\d+) (blue|red|green)").unwrap();
 
-    for captures in re.captures_iter(&input) {
+    for captures in re.captures_iter(input) {
         let count = captures[1].parse().unwrap();
         let color = captures[2].to_string();
         counts.push(Count { color, count });
