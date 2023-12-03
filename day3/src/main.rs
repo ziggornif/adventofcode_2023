@@ -122,10 +122,116 @@ fn extract_numbers_adjacent_to_symbols(input: String) -> Result<i32, Error> {
     Ok(sum)
 }
 
+fn gear_ratios(input: String) -> Result<i32, Error> {
+    let reader = read_input_file(input)?;
+
+    let mut numbers = Vec::<Number>::new();
+    let mut gears = Vec::<Symbol>::new();
+
+    for (row_idx, line) in reader.lines().enumerate() {
+        let mut start_coord = 0;
+        let mut value = String::new();
+
+        let line = line?;
+        let line_size = line.chars().count();
+
+        for (col_idx, ch) in line.chars().enumerate() {
+            if ch == '*' {
+                if value.len() > 0 {
+                    numbers.push(Number {
+                        start: Coord {
+                            x: row_idx as i32,
+                            y: start_coord,
+                        },
+                        end: Coord {
+                            x: row_idx as i32,
+                            y: (col_idx - 1) as i32,
+                        },
+                        value: value.parse::<i32>().unwrap(),
+                    });
+                    value.clear();
+                }
+
+                gears.push(Symbol {
+                    coord: Coord {
+                        x: row_idx as i32,
+                        y: col_idx as i32,
+                    },
+                })
+            } else if ch.is_numeric() {
+                if value.len() == 0 {
+                    start_coord = col_idx as i32;
+                } else if col_idx == line_size - 1 {
+                    value.push(ch);
+                    numbers.push(Number {
+                        start: Coord {
+                            x: row_idx as i32,
+                            y: start_coord,
+                        },
+                        end: Coord {
+                            x: row_idx as i32,
+                            y: col_idx as i32,
+                        },
+                        value: value.parse::<i32>().unwrap(),
+                    });
+                    value.clear();
+                }
+                value.push(ch);
+            } else {
+                if value.len() > 0 {
+                    numbers.push(Number {
+                        start: Coord {
+                            x: row_idx as i32,
+                            y: start_coord,
+                        },
+                        end: Coord {
+                            x: row_idx as i32,
+                            y: (col_idx - 1) as i32,
+                        },
+                        value: value.parse::<i32>().unwrap(),
+                    });
+                    value.clear();
+                }
+            }
+        }
+    }
+
+    let mut sum = 0;
+    for gear in gears {
+        let nums: Vec<&Number> = numbers
+            .iter()
+            .filter(|num| {
+                let s_x = gear.coord.x;
+                let s_y = gear.coord.y;
+
+                if num.start.x != s_x && num.start.x != s_x + 1 && num.start.x != s_x - 1 {
+                    false
+                } else if num.start.y - 1 <= s_y && s_y <= num.end.y + 1 {
+                    true
+                } else {
+                    false
+                }
+            })
+            .collect();
+
+        if nums.len() > 1 {
+            let result: i32 = nums.iter().map(|num| num.value).product();
+
+            sum += result;
+        }
+    }
+
+    Ok(sum)
+}
+
 fn main() -> Result<(), Error> {
     println!("Hello advent of code day 3 !");
 
     let result = extract_numbers_adjacent_to_symbols("day3/src/resources/input.txt".to_owned())?;
+
+    println!("The result is {}", result);
+
+    let result = gear_ratios("day3/src/resources/input.txt".to_owned())?;
 
     println!("The result is {}", result);
 
@@ -134,13 +240,21 @@ fn main() -> Result<(), Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::extract_numbers_adjacent_to_symbols;
+    use crate::{extract_numbers_adjacent_to_symbols, gear_ratios};
 
     #[test]
-    fn should_do_something() -> Result<(), String> {
+    fn should_sum_numbers() -> Result<(), String> {
         let result = extract_numbers_adjacent_to_symbols("src/resources/test-input.txt".to_owned())
             .map_err(|e| format!("Test failed with error: {:?}", e))?;
         assert_eq!(result, 4361);
+        Ok(())
+    }
+
+    #[test]
+    fn should_retrieve_gear_ratios() -> Result<(), String> {
+        let result = gear_ratios("src/resources/test-input.txt".to_owned())
+            .map_err(|e| format!("Test failed with error: {:?}", e))?;
+        assert_eq!(result, 467835);
         Ok(())
     }
 }
