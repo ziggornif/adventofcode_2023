@@ -55,6 +55,25 @@ fn find_lowest_location(seeds: Vec<i64>, maps: &MapCollection) -> i64 {
     *min
 }
 
+fn generate_ranges(seeds: Vec<i64>) -> Vec<i64> {
+    let mut result = Vec::new();
+
+    // Iterate over pairs in the input vector
+    let mut iter = seeds.iter();
+    while let Some(&start) = iter.next() {
+        if let Some(&length) = iter.next() {
+            // Generate the range and append to the result vector
+            let end = start + length;
+            result.extend(start..end);
+        } else {
+            // Handle the case where there is an odd number of elements in the input vector
+            panic!("Odd number of elements in the seeds vector");
+        }
+    }
+
+    result
+}
+
 fn process(input: String) -> Result<i64, Error> {
     let reader = read_input_file(input)?;
 
@@ -89,7 +108,8 @@ fn process(input: String) -> Result<i64, Error> {
         maps.insert(current_map_name.clone(), map);
     }
 
-    let lowest_location = find_lowest_location(seeds, &maps);
+    let updated_seeds = generate_ranges(seeds);
+    let lowest_location = find_lowest_location(updated_seeds, &maps);
 
     Ok(lowest_location)
 }
@@ -111,7 +131,7 @@ mod test {
     fn shoud_get_lowest_location() -> Result<(), String> {
         let result = process("src/resources/test-input.txt".to_owned())
             .map_err(|e| format!("Test failed with error: {:?}", e))?;
-        assert_eq!(result, 35);
+        assert_eq!(result, 46);
         Ok(())
     }
 }
