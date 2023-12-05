@@ -21,33 +21,40 @@ fn extract_arrays(line: String) -> (Vec<i32>, Vec<i32>) {
     (result, winning)
 }
 
-fn process(input: String) -> Result<i32, Error> {
+fn process(input: String) -> Result<(i32, i32), Error> {
     let reader = read_input_file(input)?;
-
     let mut sum = 0;
+    let mut cards = vec![0i32; reader.capacity()];
 
-    for line in reader.lines() {
+    for (idx, line) in reader.lines().enumerate() {
         match line {
             Ok(line_content) => {
+                cards[idx] += 1;
                 let (winning, result) = extract_arrays(line_content);
-                let score = result
+                let matched = result
                     .iter()
-                    .filter(|num| winning.iter().any(|win| &win == num))
-                    .fold(0, |acc, _x| if acc == 0 { 1 } else { 2 * acc });
+                    .filter(|num| winning.iter().any(|win| &win == num));
+
+                for v in 1..matched.clone().count() + 1 {
+                    cards[idx + v] += cards[idx];
+                }
+
+                let score = matched.fold(0, |acc, _x| if acc == 0 { 1 } else { 2 * acc });
                 sum += score;
             }
             Err(e) => eprintln!("Error reading line: {}", e),
         }
     }
-    Ok(sum)
+
+    Ok((sum, cards.iter().sum()))
 }
 
 fn main() -> Result<(), Error> {
     println!("Hello advent of code day 4 !");
 
-    let result = process("day4/src/resources/input.txt".to_owned())?;
+    let (result, cards) = process("day4/src/resources/input.txt".to_owned())?;
 
-    println!("The result is {}", result);
+    println!("The result is {} {}", result, cards);
 
     Ok(())
 }
@@ -58,7 +65,7 @@ mod tests {
 
     #[test]
     fn shoud_get_score() -> Result<(), String> {
-        let result = process("src/resources/test-input.txt".to_owned())
+        let (result, _) = process("src/resources/test-input.txt".to_owned())
             .map_err(|e| format!("Test failed with error: {:?}", e))?;
         assert_eq!(result, 13);
         Ok(())
@@ -66,9 +73,17 @@ mod tests {
 
     #[test]
     fn shoud_get_score_real_input() -> Result<(), String> {
-        let result = process("src/resources/input.txt".to_owned())
+        let (result, _) = process("src/resources/input.txt".to_owned())
             .map_err(|e| format!("Test failed with error: {:?}", e))?;
         assert_eq!(result, 24160);
+        Ok(())
+    }
+
+    #[test]
+    fn shoud_get_total_cards() -> Result<(), String> {
+        let (_, cards) = process("src/resources/test-input2.txt".to_owned())
+            .map_err(|e| format!("Test failed with error: {:?}", e))?;
+        assert_eq!(cards, 30);
         Ok(())
     }
 }
