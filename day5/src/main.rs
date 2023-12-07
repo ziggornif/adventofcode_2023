@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::io::{BufRead, Error};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 use utils::read_input_file;
 
@@ -32,7 +34,6 @@ fn convert_number(number: i64, map: &Map) -> i64 {
 }
 
 fn find_lowest_location(seeds: Vec<i64>, maps: &MapCollection) -> i64 {
-    let mut locations = Vec::<i64>::new();
     let seed_to_soil = maps.get("seed-to-soil").unwrap();
     let soil_to_fertilizer = maps.get("soil-to-fertilizer").unwrap();
     let fertilizer_to_water = maps.get("fertilizer-to-water").unwrap();
@@ -40,19 +41,66 @@ fn find_lowest_location(seeds: Vec<i64>, maps: &MapCollection) -> i64 {
     let light_to_temperature = maps.get("light-to-temperature").unwrap();
     let temperature_to_humidity = maps.get("temperature-to-humidity").unwrap();
     let humidity_to_location = maps.get("humidity-to-location").unwrap();
+
+    // Use Arc for shared access to maps
+    let shared_maps = Arc::new((
+        seed_to_soil.clone(),
+        soil_to_fertilizer.clone(),
+        fertilizer_to_water.clone(),
+        water_to_light.clone(),
+        light_to_temperature.clone(),
+        temperature_to_humidity.clone(),
+        humidity_to_location.clone(),
+    ));
+
+    // Use Mutex for synchronized access to the result vector
+    let result = Arc::new(Mutex::new(Vec::<i64>::new()));
+
+    // Iterate over seeds and spawn threads for parallel processing
+    let mut handles = vec![];
+
     for seed in seeds {
-        let soil = convert_number(seed, seed_to_soil);
-        let fertilizer = convert_number(soil, soil_to_fertilizer);
-        let water = convert_number(fertilizer, fertilizer_to_water);
-        let light = convert_number(water, water_to_light);
-        let temperature = convert_number(light, light_to_temperature);
-        let humidity = convert_number(temperature, temperature_to_humidity);
-        let location = convert_number(humidity, humidity_to_location);
-        locations.push(location);
+        let shared_maps = Arc::clone(&shared_maps);
+        let result = Arc::clone(&result);
+
+        // Spawn a thread for each seed
+        let handle = thread::spawn(move || {
+            let (
+                seed_to_soil,
+                soil_to_fertilizer,
+                fertilizer_to_water,
+                water_to_light,
+                light_to_temperature,
+                temperature_to_humidity,
+                humidity_to_location,
+            ) = &*shared_maps;
+
+            let soil = convert_number(seed, seed_to_soil);
+            let fertilizer = convert_number(soil, soil_to_fertilizer);
+            let water = convert_number(fertilizer, fertilizer_to_water);
+            let light = convert_number(water, water_to_light);
+            let temperature = convert_number(light, light_to_temperature);
+            let humidity = convert_number(temperature, temperature_to_humidity);
+            let location = convert_number(humidity, humidity_to_location);
+
+            // Use Mutex to safely update the result vector
+            let mut result = result.lock().unwrap();
+            result.push(location);
+        });
+
+        handles.push(handle);
     }
 
-    let min = locations.iter().min().unwrap();
-    *min
+    // Wait for all threads to finish
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    // Extract the result vector from the Mutex
+    let result = Arc::try_unwrap(result).unwrap().into_inner().unwrap();
+
+    // Find the minimum location from the result vector
+    *result.iter().min().unwrap()
 }
 
 fn generate_ranges(seeds: Vec<i64>) -> Vec<i64> {
@@ -108,7 +156,9 @@ fn process(input: String) -> Result<i64, Error> {
         maps.insert(current_map_name.clone(), map);
     }
 
+    println!("Generate seeds...");
     let updated_seeds = generate_ranges(seeds);
+    println!("Find lowest location");
     let lowest_location = find_lowest_location(updated_seeds, &maps);
 
     Ok(lowest_location)

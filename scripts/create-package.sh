@@ -11,4 +11,6 @@ cargo_toml="Cargo.toml"
 # Create new Cargo project
 cargo new $package_name --vcs=none
 
-echo "Package $package_name created successfully! Add $package_name to your root Cargo.toml file."
+sed "s/\"\]/\", \"$package_name\"]/" Cargo.toml > Cargo.tmp && mv Cargo.tmp Cargo.toml
+
+echo "Package $package_name created successfully!"
