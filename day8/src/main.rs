@@ -1,13 +1,3 @@
-// RL
-
-// AAA = (BBB, CCC)
-// BBB = (DDD, EEE)
-// CCC = (ZZZ, GGG)
-// DDD = (DDD, DDD)
-// EEE = (EEE, EEE)
-// GGG = (GGG, GGG)
-// ZZZ = (ZZZ, ZZZ)
-
 use std::io::Error;
 
 use regex::Regex;
@@ -26,7 +16,6 @@ fn process(input: String) -> Result<i32, Error> {
 
     // here the directions
     let directions: Vec<char> = lines.get(0).unwrap().chars().collect();
-    println!("directions {:?}", directions);
 
     // and nodes
     let nodes: Vec<Node> = re
@@ -40,33 +29,33 @@ fn process(input: String) -> Result<i32, Error> {
         })
         .collect();
 
-    let mut exit = false;
-    let mut dir_id = 0;
-    let mut curr_node = nodes.get(0).unwrap();
-    let mut steps = 0;
-    while !exit {
-        steps += 1;
-        if dir_id == directions.len() {
-            dir_id = 0
-        }
-        let direction = *directions.get(dir_id).unwrap();
-        curr_node = nodes
-            .iter()
-            .find(|node| {
-                if direction == 'L' {
-                    node.val == curr_node.left
-                } else {
-                    node.val == curr_node.right
-                }
-            })
-            .unwrap();
+    let mut curr_node = "AAA".to_string();
+    let mut idx = 0;
+    let mut output = 0;
 
-        println!("steps {steps} direction {direction} node {:?}", curr_node);
-        if curr_node.val == "ZZZ" {
-            exit = false;
+    while curr_node != "ZZZ" {
+        let direction = directions[idx];
+        if direction == 'R' {
+            curr_node = nodes
+                .iter()
+                .find(|n| n.val == curr_node)
+                .unwrap()
+                .right
+                .clone();
+        } else {
+            curr_node = nodes
+                .iter()
+                .find(|n| n.val == curr_node)
+                .unwrap()
+                .left
+                .clone();
         }
+        idx = (idx + 1) % directions.len();
+        output += 1;
     }
-    Ok(steps)
+    println!("Output: {}", output);
+
+    Ok(output)
 }
 
 fn main() -> Result<(), Error> {
