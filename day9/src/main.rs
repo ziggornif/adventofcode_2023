@@ -1,13 +1,13 @@
 use std::io::Error;
 
-fn find_prev_value(values: &Vec<i32>) -> i32 {
+fn find_prev_value(values: Vec<i32>) -> i32 {
     let mut reversed = values.clone();
     reversed.reverse();
 
     find_next_value(&reversed)
 }
 
-fn find_next_value(values: &Vec<i32>) -> i32 {
+fn find_next_value(values: &[i32]) -> i32 {
     let differences = values.windows(2).map(|w| w[1] - w[0]).collect::<Vec<_>>();
 
     let last = values.last().unwrap();
@@ -53,7 +53,7 @@ fn part2(input: String) -> Result<i32, Error> {
     let mut result = 0;
     values
         .iter()
-        .for_each(|line| result += find_prev_value(line));
+        .for_each(|line| result += find_prev_value(line.clone()));
     println!("{:?}", result);
     Ok(result)
 }

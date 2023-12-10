@@ -71,7 +71,6 @@ impl Maze {
                 }
                 None
             }
-            _ => None,
         }
     }
 
@@ -117,7 +116,6 @@ impl Maze {
                     None
                 }
             }
-            _ => None,
         }
     }
 
@@ -128,7 +126,6 @@ impl Maze {
         visited: &[Coord],
     ) -> Option<(Coord, Direction)> {
         let curr_pipe = self.0[coord.x][coord.y];
-        let out_coord = Coord { x: 0, y: 0 };
 
         let next_direction = if curr_pipe == '|' || curr_pipe == '-' {
             Some(*last_direction)
@@ -160,23 +157,22 @@ impl Maze {
             None
         };
 
-        if next_direction.is_none() {
-            return None;
+        if let Some(next_direction) = next_direction {
+            // let next_direction_ref = next_direction.as_ref();
+
+            let next_coord = self
+                .get_coord_from_direction(coord, &next_direction)
+                .unwrap();
+
+            if !visited
+                .iter()
+                .any(|c| c.x == next_coord.x && c.y == next_coord.y)
+                && self.is_linked(coord, &next_direction).is_some()
+            {
+                return Some((next_coord, next_direction));
+            }
         }
 
-        let next_direction_ref = next_direction.as_ref().unwrap();
-
-        let next_coord = self
-            .get_coord_from_direction(coord, next_direction_ref)
-            .unwrap();
-
-        if !visited
-            .iter()
-            .any(|c| c.x == next_coord.x && c.y == next_coord.y)
-            && self.is_linked(coord, next_direction_ref).is_some()
-        {
-            return Some((next_coord, next_direction.unwrap()));
-        }
         None
     }
 }
