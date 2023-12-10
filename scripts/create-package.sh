@@ -13,4 +13,6 @@ cargo new $package_name --vcs=none
 
 sed "s/\"\]/\", \"$package_name\"]/" Cargo.toml > Cargo.tmp && mv Cargo.tmp Cargo.toml
 
+mkdir $package_name/src/resources
+
 echo "Package $package_name created successfully!"
