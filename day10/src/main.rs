@@ -10,6 +10,14 @@ enum Direction {
     W,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum Kind {
+    Blank,
+    Visited,
+    Output,
+    Input,
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 struct Coord {
     x: usize,
@@ -25,17 +33,17 @@ struct Move {
 #[derive(Debug, Clone)]
 struct Tile {
     c: char,
-    visited: bool,
+    kind: Kind,
 }
 
 fn convert_char(c: char) -> char {
     match c {
-        'L' => '╚',
-        'F' => '╔',
-        '-' => '═',
-        '|' => '║',
-        'J' => '╝',
-        '7' => '╗',
+        'L' => '└',
+        'F' => '┌',
+        '-' => '─',
+        '|' => '│',
+        'J' => '┘',
+        '7' => '┐',
         _ => c,
     }
 }
@@ -212,10 +220,10 @@ impl Maze {
         // print!("\n");
         // Create a blank image with a white background
 
-        let mut img = image::ImageBuffer::<Rgba<u8>, Vec<u8>>::new(
-            self.0[0].len() as u32,
-            self.0.len() as u32,
-        );
+        // let mut img = image::ImageBuffer::<Rgba<u8>, Vec<u8>>::new(
+        //     self.0[0].len() as u32,
+        //     self.0.len() as u32,
+        // );
 
         // // Set some pixels to red
         // for y in 100..200 {
@@ -228,28 +236,33 @@ impl Maze {
 
         for (x, l) in self.0.iter().enumerate() {
             for (y, c) in l.iter().enumerate() {
-                let pixel = img.get_pixel_mut(x as u32, y as u32);
-                if c.visited {
-                    // print!("{}", convert_char(c.c).to_string().red());
+                // let pixel = img.get_pixel_mut(x as u32, y as u32);
+                if c.kind == Kind::Visited {
+                    print!("{}", convert_char(c.c).to_string().blue());
                     // img.put_pixel(x as u32, y as u32, Rgba([255, 0, 0, 255])); // RGBA color (red)
-                    *pixel = Rgba([255, 0, 0, 255]);
+                    // *pixel = Rgba([255, 0, 0, 255]);
                     // img.put_pixel(x as u32, y as u32, Rgb([255, 0, 0]))
-                    img.put_pixel(x as u32, y as u32, Rgba([255, 0, 0, 255]));
-                } else {
-                    img.put_pixel(x as u32, y as u32, Rgba([0, 255, 0, 255]));
-                    // img.put_pixel(x as u32, y as u32, Rgb([0, 255, 0]));
+                    // img.put_pixel(x as u32, y as u32, Rgba([0, 0, 255, 255]));
+                } else if c.kind == Kind::Output {
+                    print!("{}", convert_char(c.c).to_string().red());
+                    //     // img.put_pixel(x as u32, y as u32, Rgba([255, 0, 0, 255]));
+                    //     // img.put_pixel(x as u32, y as u32, Rgb([0, 255, 0]));
 
-                    // img.put_pixel(x as u32, y as u32, Rgba([255, 255, 0, 255]));
-                    // RGBA color (red)
+                    //     // img.put_pixel(x as u32, y as u32, Rgba([255, 255, 0, 255]));
+                    //     // RGBA color (red)
+                    // } else if c.kind == Kind::Input {
+                    //     // img.put_pixel(x as u32, y as u32, Rgba([0, 255, 0, 255]));
+                } else {
+                    print!("{}", convert_char(c.c).to_string().green());
                 }
             }
             print!("\n");
         }
-        img.save("output.png").unwrap();
+        // img.save("output.png").unwrap();
         // for i in 0..self.0[0].len() {
         //     print!("#");
         // }
-        // print!("\n");
+        print!("\n");
     }
 
     fn scan(&mut self) {
@@ -261,7 +274,7 @@ impl Maze {
         let mut right_walls: Vec<Coord> = Vec::new();
         for (idcol, c) in self.0[0].iter().enumerate() {
             for (idlig, l) in self.0.iter().enumerate() {
-                if self.0[idlig][idcol].visited {
+                if self.0[idlig][idcol].kind == Kind::Visited {
                     top_wall.push(Coord { x: idlig, y: idcol });
                     break;
                 }
@@ -270,7 +283,7 @@ impl Maze {
 
         for (idcol, c) in self.0[0].iter().enumerate() {
             for (idlig, l) in self.0.iter().enumerate().rev() {
-                if self.0[idlig][idcol].visited {
+                if self.0[idlig][idcol].kind == Kind::Visited {
                     bottom_wall.push(Coord { x: idlig, y: idcol });
                     break;
                 }
@@ -279,7 +292,7 @@ impl Maze {
 
         for (idlig, l) in self.0.iter().enumerate() {
             for (idcol, l) in l.iter().enumerate() {
-                if self.0[idlig][idcol].visited {
+                if self.0[idlig][idcol].kind == Kind::Visited {
                     left_walls.push(Coord { x: idlig, y: idcol });
                     break;
                 }
@@ -288,7 +301,7 @@ impl Maze {
 
         for (idlig, l) in self.0.iter().enumerate() {
             for (idcol, l) in l.iter().enumerate().rev() {
-                if self.0[idlig][idcol].visited {
+                if self.0[idlig][idcol].kind == Kind::Visited {
                     right_walls.push(Coord { x: idlig, y: idcol });
                     break;
                 }
@@ -300,14 +313,14 @@ impl Maze {
             let (lastwall, _) = l
                 .iter()
                 .enumerate()
-                .filter(|(_, c)| c.visited)
+                .filter(|(_, c)| c.kind == Kind::Visited)
                 .last()
                 .unwrap();
             for (idy, c) in l.iter().enumerate() {
                 if idy == 0 {
                     continue;
                 }
-                if c.visited {
+                if c.kind == Kind::Visited {
                     if top_wall
                         .iter()
                         .find(|coord| coord.x == idx && coord.y == idy)
@@ -371,34 +384,84 @@ impl Maze {
         println!("Tiles {}", tiles_enclosed);
     }
 
-    fn scan_new(&self) {
-        let total_internal_nodes = 0;
-        for y in 0..self.0[0].len() {
-            let row_internal_nodes = 0;
-
-            // Here, we're going to count the number of internal nodes in this row.
-            // We do this by keeping track of whether we're in the "inside" or "outside"
-            // sections of the loop.
-
-            // Inside or outside the loop?
-            let is_inside_loop = false;
-            // Are we currently on the loop itself?
-            let is_on_cycle = false;
-            // When we got on the loop, were we entering from the top ('L') or bottom ('F')?
-            let entered_cycle_from_bottom = false;
-            for x in 0..self.0.len() {
-                let node = self.0[x][y];
-                
+    fn get_walls(&self) -> Result<(Vec<Coord>, Vec<Coord>, Vec<Coord>, Vec<Coord>), Error> {
+        let mut top_walls: Vec<Coord> = Vec::new();
+        let mut bottom_walls: Vec<Coord> = Vec::new();
+        let mut left_walls: Vec<Coord> = Vec::new();
+        let mut right_walls: Vec<Coord> = Vec::new();
+        for (idcol, c) in self.0[0].iter().enumerate() {
+            for (idlig, l) in self.0.iter().enumerate() {
+                if self.0[idlig][idcol].kind == Kind::Visited {
+                    top_walls.push(Coord { x: idlig, y: idcol });
+                    break;
+                }
             }
         }
+
+        for (idcol, c) in self.0[0].iter().enumerate() {
+            for (idlig, l) in self.0.iter().enumerate().rev() {
+                if self.0[idlig][idcol].kind == Kind::Visited {
+                    bottom_walls.push(Coord { x: idlig, y: idcol });
+                    break;
+                }
+            }
+        }
+
+        for (idlig, l) in self.0.iter().enumerate() {
+            for (idcol, l) in l.iter().enumerate() {
+                if self.0[idlig][idcol].kind == Kind::Visited {
+                    left_walls.push(Coord { x: idlig, y: idcol });
+                    break;
+                }
+            }
+        }
+
+        for (idlig, l) in self.0.iter().enumerate() {
+            for (idcol, l) in l.iter().enumerate().rev() {
+                if self.0[idlig][idcol].kind == Kind::Visited {
+                    right_walls.push(Coord { x: idlig, y: idcol });
+                    break;
+                }
+            }
+        }
+
+        Ok((top_walls, bottom_walls, left_walls, right_walls))
     }
+
+    // fn scan_new(&self) {
+    //     let total_internal_nodes = 0;
+    //     for y in 0..self.0[0].len() {
+    //         let row_internal_nodes = 0;
+
+    //         // Here, we're going to count the number of internal nodes in this row.
+    //         // We do this by keeping track of whether we're in the "inside" or "outside"
+    //         // sections of the loop.
+
+    //         // Inside or outside the loop?
+    //         let is_inside_loop = false;
+    //         // Are we currently on the loop itself?
+    //         let is_on_cycle = false;
+    //         // When we got on the loop, were we entering from the top ('L') or bottom ('F')?
+    //         let entered_cycle_from_bottom = false;
+    //         for x in 0..self.0.len() {
+    //             let node = self.0[x][y];
+    //         }
+    //     }
+    // }
 }
 
 fn parse_input(input: Vec<String>) -> Maze {
     Maze(
         input
             .iter()
-            .map(|line| line.chars().map(|c| Tile { c, visited: false }).collect())
+            .map(|line| {
+                line.chars()
+                    .map(|c| Tile {
+                        c,
+                        kind: Kind::Blank,
+                    })
+                    .collect()
+            })
             .collect(),
     )
 }
@@ -517,37 +580,129 @@ fn part2(input: String) -> Result<i32, Error> {
     }
 
     let mut distances: Vec<i32> = Vec::new();
+    // let mut out_maze: Vec<Vec<Tile>
 
-    for path in paths {
-        let mut moving = true;
-        let mut last_move = path.clone();
-        let mut distance = 1;
-        let mut visited: Vec<Coord> = Vec::new();
-        visited.push(path.coord.clone());
+    let (top_walls, bottom_walls, left_walls, right_walls) = maze.get_walls()?;
 
-        while moving {
-            distance += 1;
-            maze.0[last_move.coord.x][last_move.coord.y].visited = true;
+    // for path in paths {
+    let mut moving = true;
+    let mut last_move = paths[0].clone();
+    let mut distance = 1;
+    let mut visited: Vec<Coord> = Vec::new();
+    visited.push(paths[0].coord.clone());
 
-            if maze.0[last_move.coord.x][last_move.coord.y].c == 'S' {
-                distance /= 2;
-                moving = false;
-            }
+    while moving {
+        distance += 1;
+        maze.0[last_move.coord.x][last_move.coord.y].kind = Kind::Visited;
 
-            let path = maze.get_available_path(&last_move.coord, &last_move.direction, &visited);
-            if path.is_none() {
-                moving = false;
-            } else if let Some(path) = path {
-                visited.push(path.0.clone());
-                last_move = Move {
-                    coord: path.0,
-                    direction: path.1,
-                };
+        // match maze.0[last_move.coord.x][last_move.coord.y].c {
+        //     'L' => {
+        //         if last_move.coord.y > 0 {
+        //             maze.0[last_move.coord.x][last_move.coord.y - 1].kind = Kind::Output;
+        //         }
+        //         if last_move.coord.y < maze.0[0].len()
+        //             && maze.0[last_move.coord.x][last_move.coord.y + 1].kind != Kind::Output
+        //             && maze.0[last_move.coord.x][last_move.coord.y + 1].kind != Kind::Visited
+        //         {
+        //             maze.0[last_move.coord.x][last_move.coord.y + 1].kind = Kind::Input;
+        //         }
+        //         if last_move.coord.x < maze.0.len() - 1 {
+        //             maze.0[last_move.coord.x + 1][last_move.coord.y].kind = Kind::Output;
+        //         }
+        //     }
+        //     'F' => {
+        //         if last_move.coord.y > 0 {
+        //             maze.0[last_move.coord.x][last_move.coord.y - 1].kind = Kind::Output;
+        //         }
+        //         if last_move.coord.y < maze.0[0].len()
+        //             && maze.0[last_move.coord.x][last_move.coord.y + 1].kind != Kind::Output
+        //             && maze.0[last_move.coord.x][last_move.coord.y + 1].kind != Kind::Visited
+        //         {
+        //             maze.0[last_move.coord.x][last_move.coord.y + 1].kind = Kind::Input;
+        //         }
+        //         if last_move.coord.x > 0 {
+        //             maze.0[last_move.coord.x - 1][last_move.coord.y].kind = Kind::Output;
+        //         }
+        //     }
+        //     // '-' => '═',
+        //     // '|' => '║',
+        //     'J' => {
+        //         if last_move.coord.y > 0
+        //             && maze.0[last_move.coord.x][last_move.coord.y - 1].kind != Kind::Output
+        //             && maze.0[last_move.coord.x][last_move.coord.y - 1].kind != Kind::Visited
+        //         {
+        //             maze.0[last_move.coord.x][last_move.coord.y - 1].kind = Kind::Input;
+        //         }
+        //         if last_move.coord.y < maze.0[0].len() {
+        //             maze.0[last_move.coord.x][last_move.coord.y + 1].kind = Kind::Output;
+        //         }
+        //         if last_move.coord.x < maze.0.len() - 1 {
+        //             maze.0[last_move.coord.x + 1][last_move.coord.y].kind = Kind::Output;
+        //         }
+        //     }
+        //     '7' => {
+        //         if last_move.coord.y > 0
+        //             && maze.0[last_move.coord.x][last_move.coord.y - 1].kind != Kind::Output
+        //             && maze.0[last_move.coord.x][last_move.coord.y - 1].kind != Kind::Visited
+        //         {
+        //             maze.0[last_move.coord.x][last_move.coord.y - 1].kind = Kind::Input;
+        //         }
+        //         if last_move.coord.y < maze.0[0].len() {
+        //             maze.0[last_move.coord.x][last_move.coord.y + 1].kind = Kind::Output;
+        //         }
+        //         if last_move.coord.x > 0 {
+        //             maze.0[last_move.coord.x - 1][last_move.coord.y].kind = Kind::Output;
+        //         }
+        //     }
+        //     _ => (),
+        // }
+
+        if maze.0[last_move.coord.x][last_move.coord.y].c == 'S' {
+            distance /= 2;
+            moving = false;
+        }
+
+        let path = maze.get_available_path(&last_move.coord, &last_move.direction, &visited);
+        if path.is_none() {
+            moving = false;
+        } else if let Some(path) = path {
+            visited.push(path.0.clone());
+            last_move = Move {
+                coord: path.0,
+                direction: path.1,
+            };
+        }
+    }
+
+    for (idx, l) in maze.0.clone().iter().enumerate() {
+        for (idy, c) in l.iter().enumerate() {
+            let before_left_wall = left_walls
+                .iter()
+                .find(|w| w.x == idx && idy < w.y)
+                .is_some();
+
+            let before_top_wall = top_walls.iter().find(|w| idx < w.x && idy == w.y).is_some();
+
+            let after_bottom_wall = bottom_walls
+                .iter()
+                .find(|w| idx > w.x && idy == w.y)
+                .is_some();
+
+            let after_right_wall = right_walls
+                .iter()
+                .find(|w| idx == w.x && idy > w.y)
+                .is_some();
+
+            if before_left_wall || before_top_wall || after_bottom_wall || after_right_wall {
+                println!("ping !");
+                maze.0[idx][idy].kind = Kind::Output;
             }
         }
-        println!("distance {}", distance);
-        distances.push(distance);
     }
+
+    println!("distance {}", distance);
+    distances.push(distance);
+    // }
 
     maze.display();
 
