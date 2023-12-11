@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 utils = { path = "../utils" }
+colored = "2"
+image = "0.24"
