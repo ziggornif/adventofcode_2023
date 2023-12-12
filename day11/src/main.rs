@@ -1,4 +1,3 @@
-use rayon::prelude::*;
 use std::io::Error;
 
 #[derive(Debug, Clone, Ord, PartialEq, PartialOrd, Eq)]
@@ -51,10 +50,10 @@ fn process(input: String, factor: i64) -> Result<i64, Error> {
     let universe_map: Vec<Vec<char>> = lines.iter().map(|line| line.chars().collect()).collect();
 
     let mut galaxies: Vec<Pos> = universe_map
-        .par_iter()
+        .iter()
         .enumerate()
         .flat_map(|(row, line)| {
-            line.par_iter().enumerate().filter_map(move |(col, &c)| {
+            line.iter().enumerate().filter_map(move |(col, &c)| {
                 if c == '#' {
                     Some(Pos(row as i64, col as i64))
                 } else {
@@ -86,7 +85,7 @@ fn process(input: String, factor: i64) -> Result<i64, Error> {
 }
 
 fn main() -> Result<(), Error> {
-    println!("Hello advent of code day 10 !");
+    println!("Hello advent of code day 11 !");
     let result = process("day11/src/resources/input.txt".to_string(), 1)?;
     println!("Result: {}", result);
 
