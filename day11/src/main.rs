@@ -1,126 +1,56 @@
 use rayon::prelude::*;
 use std::io::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Ord, PartialEq, PartialOrd, Eq)]
 struct Pos(i64, i64);
 
-fn duplicate_lines_and_columns(map: &mut Vec<Vec<char>>) {
-    let rows = map.len();
-    let cols = map[0].len();
+fn calculate_empty_lig_cols(universe_map: &Vec<Vec<char>>) -> (Vec<i64>, Vec<i64>) {
+    let empty_lines = universe_map
+        .iter()
+        .enumerate()
+        .filter(|(_, line)| line.iter().all(|&c| c == '.'))
+        .map(|(id, _)| id as i64)
+        .collect::<Vec<i64>>();
 
-    // Duplicate empty lines
-    for row in (0..rows).rev() {
-        if map[row].iter().all(|&c| c == '.') {
-            map.insert(row + 1, map[row].clone());
-        }
-    }
-
-    // Duplicate empty columns
+    let mut empty_cols = Vec::<i64>::new();
+    let cols = universe_map[0].len();
     for col in (0..cols).rev() {
-        if map.iter().all(|row| row[col] == '.') {
-            for row in map.iter_mut() {
-                row.insert(col + 1, row[col]);
-            }
+        if universe_map.iter().all(|row| row[col] == '.') {
+            empty_cols.push(col as i64)
         }
     }
+
+    empty_cols.sort();
+
+    (empty_lines, empty_cols)
 }
+fn distance(a: Pos, b: Pos, factor: i64, empty_lines: &Vec<i64>, empty_cols: &Vec<i64>) -> i64 {
+    let (startx, endx) = if b.0 > a.0 { (a.0, b.0) } else { (b.0, a.0) };
 
-fn expand_universe(map: &mut Vec<Vec<char>>, expansion_factor: usize) {
-    let rows = map.len();
-    let cols = map[0].len();
+    let num_lines = empty_lines
+        .iter()
+        .filter(|&&l| l > startx && l < endx)
+        .count() as i64;
 
-    // Duplicate empty rows
-    for row in (0..rows).rev() {
-        if map[row].iter().all(|&c| c == '.') {
-            let empty_row = vec!['.'; cols];
-            if expansion_factor == 1 {
-                map.insert(row + 1, empty_row.clone());
-            } else {
-                for _ in 0..expansion_factor - 1 {
-                    map.insert(row + 1, empty_row.clone());
-                }
-            }
-        }
-    }
+    let (starty, endy) = if b.1 > a.1 { (a.1, b.1) } else { (b.1, a.1) };
 
-    // Duplicate empty columns
-    for col in (0..cols).rev() {
-        if map.iter().all(|row| row[col] == '.') {
-            if expansion_factor == 1 {
-                for row in map.iter_mut() {
-                    row.insert(col + 1, row[col]);
-                }
-            } else {
-                for _ in 0..expansion_factor - 1 {
-                    for row in map.iter_mut() {
-                        row.insert(col + 1, row[col]);
-                    }
-                }
-            }
-        }
-    }
-}
+    let num_cols = empty_cols
+        .iter()
+        .filter(|&&c| c > starty && c < endy)
+        .count() as i64;
 
-fn distance(a: &Pos, b: &Pos) -> i64 {
     let dx = b.0 - a.0;
     let dy = b.1 - a.1;
-    dx.abs() + dy.abs()
+
+    dx.abs() + dy.abs() + (num_lines + num_cols) * factor
 }
 
-// fn part1(input: String) -> Result<i64, Error> {
-//     let lines = utils::read_input_file_as_vec(input)?;
-
-//     let mut universe_map: Vec<Vec<char>> =
-//         lines.iter().map(|line| line.chars().collect()).collect();
-
-//     duplicate_lines_and_columns(&mut universe_map);
-
-//     let galaxies: Vec<Pos> = universe_map
-//         .iter()
-//         .enumerate()
-//         .flat_map(|(row, line)| {
-//             line.iter().enumerate().filter_map(move |(col, &c)| {
-//                 if c == '#' {
-//                     Some(Pos(row as i64, col as i64))
-//                 } else {
-//                     None
-//                 }
-//             })
-//         })
-//         .collect();
-
-//     let mut total_shortest_paths = 0;
-
-//     for i in 0..galaxies.len() {
-//         for j in (i + 1)..galaxies.len() {
-//             total_shortest_paths += distance(&galaxies[i], &galaxies[j]);
-//         }
-//     }
-
-//     Ok(total_shortest_paths)
-// }
-
-fn calculate_total_shortest_paths(galaxies: &[Pos]) -> i64 {
-    galaxies
-        .par_iter()
-        .enumerate()
-        .flat_map(|(i, pos_i)| {
-            (i + 1..galaxies.len())
-                .into_par_iter()
-                .map(move |j| distance(pos_i, &galaxies[j]))
-        })
-        .sum()
-}
-
-fn process(input: String, factor: usize) -> Result<i64, Error> {
+fn process(input: String, factor: i64) -> Result<i64, Error> {
     let lines = utils::read_input_file_as_vec(input)?;
 
-    let mut universe_map: Vec<Vec<char>> =
-        lines.iter().map(|line| line.chars().collect()).collect();
+    let universe_map: Vec<Vec<char>> = lines.iter().map(|line| line.chars().collect()).collect();
 
-    expand_universe(&mut universe_map, factor);
-
-    let galaxies: Vec<Pos> = universe_map
+    let mut galaxies: Vec<Pos> = universe_map
         .par_iter()
         .enumerate()
         .flat_map(|(row, line)| {
@@ -134,14 +64,23 @@ fn process(input: String, factor: usize) -> Result<i64, Error> {
         })
         .collect();
 
-    // let mut total_shortest_paths = 0;
+    galaxies.sort_by(|a, b| a.cmp(b));
 
-    // for i in 0..galaxies.len() {
-    //     for j in (i + 1)..galaxies.len() {
-    //         total_shortest_paths += distance(&galaxies[i], &galaxies[j]);
-    //     }
-    // }
-    let total_shortest_paths = calculate_total_shortest_paths(&galaxies);
+    let mut total_shortest_paths = 0;
+
+    let (empty_lines, empty_cols) = calculate_empty_lig_cols(&universe_map);
+
+    for i in 0..galaxies.len() {
+        for j in (i + 1)..galaxies.len() {
+            total_shortest_paths += distance(
+                galaxies[i].clone(),
+                galaxies[j].clone(),
+                factor,
+                &empty_lines,
+                &empty_cols,
+            );
+        }
+    }
 
     Ok(total_shortest_paths)
 }
@@ -151,7 +90,7 @@ fn main() -> Result<(), Error> {
     let result = process("day11/src/resources/input.txt".to_string(), 1)?;
     println!("Result: {}", result);
 
-    let result = process("day11/src/resources/input.txt".to_string(), 1000000)?;
+    let result = process("day11/src/resources/input.txt".to_string(), 999999)?;
     println!("Result: {}", result);
 
     Ok(())
@@ -171,7 +110,7 @@ mod tests {
 
     #[test]
     fn should_get_p2_10_result() -> Result<(), String> {
-        let result = process("src/resources/test-input.txt".to_owned(), 10)
+        let result = process("src/resources/test-input.txt".to_owned(), 9)
             .map_err(|e| format!("Test failed with error: {:?}", e))?;
         assert_eq!(result, 1030);
         Ok(())
@@ -179,7 +118,7 @@ mod tests {
 
     #[test]
     fn should_get_p2_100_result() -> Result<(), String> {
-        let result = process("src/resources/test-input.txt".to_owned(), 100)
+        let result = process("src/resources/test-input.txt".to_owned(), 99)
             .map_err(|e| format!("Test failed with error: {:?}", e))?;
         assert_eq!(result, 8410);
         Ok(())
