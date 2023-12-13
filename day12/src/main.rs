@@ -1,7 +1,46 @@
 use std::io::Error;
 
+#[derive(Debug)]
+enum Spring {
+    Operational,
+    Damaged,
+    Unknown,
+}
+
+#[derive(Debug)]
+struct Line {
+    springs: Vec<Spring>,
+    damaged_groups: Vec<i32>,
+}
+
 fn process(input: String) -> Result<i32, Error> {
-    let lines = utils::read_input_file_as_vec(input)?;
+    let lines: Vec<String> = utils::read_input_file_as_vec(input)?;
+    let mut spring_lines = Vec::<Line>::new();
+    lines.iter().for_each(|line| {
+        let mut slices = line.split_whitespace();
+        let springs = slices
+            .next()
+            .unwrap()
+            .chars()
+            .map(|c| match c {
+                '#' => Spring::Damaged,
+                '.' => Spring::Operational,
+                _ => Spring::Unknown,
+            })
+            .collect();
+        let damaged_groups = slices
+            .next()
+            .unwrap()
+            .split(',')
+            .map(|c| c.parse::<i32>().unwrap())
+            .collect();
+
+        spring_lines.push(Line {
+            springs,
+            damaged_groups,
+        })
+    });
+
     Ok(0)
 }
 
